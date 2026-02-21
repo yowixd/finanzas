@@ -1,11 +1,10 @@
-// Service Worker — Mis Finanzas
+// Service Worker — Mis Finanzas v2
 // Cachea la estructura visual pero NUNCA los datos sensibles
 
-const CACHE_NAME = 'finanzas-v1';
+const CACHE_NAME = 'finanzas-v2';
 
-// Solo cacheamos la shell visual (fuentes de Google, estructura)
-// Los datos cifrados están embebidos en el HTML y no se cachean separadamente
 const CACHE_URLS = [
+  './',
   'index.html',
   'manifest.json',
 ];
@@ -32,17 +31,31 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // Never cache external requests or sensitive data
-  if (!url.origin.includes(self.location.origin) &&
+  // Only handle same-origin and Google Fonts
+  if (url.origin !== self.location.origin &&
       !url.hostname.includes('fonts.googleapis.com') &&
       !url.hostname.includes('fonts.gstatic.com')) {
-    return; // Let it go through normally
+    return;
   }
 
+  // For navigation requests (HTML pages), always serve index.html from cache
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put('index.html', clone));
+          return response;
+        })
+        .catch(() => caches.match('index.html'))
+    );
+    return;
+  }
+
+  // For other requests: stale-while-revalidate
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) {
-        // Serve from cache but check for update in background
         fetch(event.request)
           .then(response => {
             if (response && response.status === 200) {
@@ -53,13 +66,12 @@ self.addEventListener('fetch', event => {
           .catch(() => {});
         return cached;
       }
-      // Not in cache: fetch and cache
       return fetch(event.request).then(response => {
         if (!response || response.status !== 200) return response;
         const clone = response.clone();
         caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         return response;
-      }).catch(() => caches.match('index.html'));
+      });
     })
   );
 });

@@ -6,8 +6,8 @@
   "orientation": "portrait",
   "background_color": "#0e0f11",
   "theme_color": "#00e5a0",
-  "start_url": "/OneDrive/Finanzas/dashboard/index.html",
-  "scope": "/",
+  "start_url": "/finanzas/",
+  "scope": "/finanzas/",
   "lang": "es",
   "icons": [
     {

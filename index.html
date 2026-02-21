@@ -39,7 +39,7 @@ body{display:flex;flex-direction:column}
 .year-group{position:relative;flex-shrink:0}
 .year-btn{white-space:nowrap;padding:5px 12px;border-radius:20px;font-size:11px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;font-family:'DM Mono',monospace;display:flex;align-items:center;gap:4px}
 .year-btn.has-active{background:var(--green-dim);border-color:var(--green);color:var(--green)}
-.year-dropdown{display:none;position:absolute;top:calc(100% + 4px);left:0;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:6px;z-index:100;min-width:120px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.year-dropdown{display:none;position:absolute;bottom:calc(100% + 4px);left:0;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:6px;z-index:100;min-width:120px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
 .year-dropdown.open{display:flex;flex-wrap:wrap;gap:4px}
 .ym-chip{padding:5px 10px;border-radius:16px;font-size:11px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:'DM Mono',monospace;transition:all .2s;text-align:center;min-width:42px}
 .ym-chip.active{background:var(--green-dim);border-color:var(--green);color:var(--green)}
@@ -82,14 +82,6 @@ canvas{display:block;width:100%!important}
 .search-box{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--card);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;margin-bottom:14px;outline:none;transition:border .2s}
 .search-box:focus{border-color:var(--green)}
 .search-box::placeholder{color:var(--muted)}
-.subs-total{display:inline-block;padding:4px 10px;border-radius:20px;background:var(--red-dim);color:var(--red);font-size:11px;margin-bottom:14px}
-.sub-item{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--border)}
-.sub-item:last-child{border-bottom:none}
-.sub-name{font-size:13px}
-.sub-meta{font-size:11px;color:var(--muted);margin-top:3px}
-.sub-badge{font-size:11px;padding:3px 8px;border-radius:20px}
-.sub-badge.warn{background:var(--yellow-dim);color:var(--yellow)}
-.sub-badge.ok{background:var(--green-dim);color:var(--green)}
 .alert-card{border-radius:var(--radius-sm);padding:14px;margin-bottom:12px;display:flex;gap:12px;align-items:flex-start}
 .alert-card.warning{background:var(--yellow-dim);border:1px solid #ffd16630}
 .alert-card.info{background:var(--green-dim);border:1px solid #00e5a030}
@@ -146,9 +138,8 @@ canvas{display:block;width:100%!important}
   <div class="tabs">
     <button class="tab active" onclick="showTab(0)">Resumen</button>
     <button class="tab" onclick="showTab(1)">Gastos</button>
-    <button class="tab" onclick="showTab(2)">Suscripciones</button>
-    <button class="tab" onclick="showTab(3)">Transacciones</button>
-    <button class="tab" onclick="showTab(4)">Alertas</button>
+    <button class="tab" onclick="showTab(2)">Transacciones</button>
+    <button class="tab" onclick="showTab(3)">Alertas</button>
   </div>
 
   <div class="content active" id="tab0">
@@ -181,30 +172,27 @@ canvas{display:block;width:100%!important}
 
   <div class="content" id="tab1">
     <input class="search-box" id="search" type="search" placeholder="Buscar..." oninput="drawTxList()">
-    <div style="display:flex;gap:8px;margin-bottom:14px">
+    <div style="display:flex;gap:8px;margin-bottom:10px">
       <select id="cat-select" class="filter-select" onchange="activeCat=this.value;drawTxList()"></select>
-      <input id="date-filter" class="filter-select" type="date" onchange="drawTxList()" style="flex:1">
     </div>
+    <div id="date-filter-container" style="display:flex;gap:8px;margin-bottom:14px;align-items:center"></div>
     <div id="tx-list"></div>
   </div>
 
   <div class="content" id="tab2">
-    <div id="subs-header"></div>
-    <div class="card" id="subs-list"></div>
-  </div>
-
-  <div class="content" id="tab3">
-    <input class="search-box" id="search-tx" type="search" placeholder="Buscar..." oninput="drawTransferList()">
-    <div class="cat-filter" id="transfer-filter">
-      <button class="cat-btn active" onclick="setTransferFilter('all')">Todos</button>
-      <button class="cat-btn" onclick="setTransferFilter('in')">Recibido</button>
-      <button class="cat-btn" onclick="setTransferFilter('out')">Enviado</button>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <select id="transfer-type-select" class="filter-select" onchange="setTransferFilter(this.value)">
+        <option value="all">Todos</option>
+        <option value="in">Recibido</option>
+        <option value="out">Enviado</option>
+      </select>
     </div>
+    <div id="date-filter-tx-container" style="display:flex;gap:8px;margin-bottom:14px;align-items:center"></div>
     <div id="transfers-summary"></div>
     <div id="transfers-list"></div>
   </div>
 
-  <div class="content" id="tab4">
+  <div class="content" id="tab3">
     <div id="alerts-list"></div>
   </div>
 </div>
@@ -346,7 +334,7 @@ function renderAll(){
   const meta=appData.meta||{};
   document.getElementById('header-meta').innerHTML=`Actualizado: ${APP_DATA.updated||'—'}<br>${meta.fecha_desde||''} → ${meta.fecha_hasta||''}`;
   renderHero();renderBarChart();renderDonutChart();
-  renderTransactions();renderSubscriptions();renderTransfers();renderAlerts();
+  renderTransactions();renderTransfers();renderAlerts();
 }
 
 function renderHero(){
@@ -415,18 +403,47 @@ function buildCats(){
 }
 
 // Transactions tab
+function buildDateFilter(containerId,onChange){
+  const c=document.getElementById(containerId);
+  if(currentMonth==='all'){
+    c.innerHTML=`<input class="filter-select" type="date" id="${containerId}-from" onchange="${onChange}()" style="flex:1"><span style="color:var(--muted);font-size:11px">a</span><input class="filter-select" type="date" id="${containerId}-to" onchange="${onChange}()" style="flex:1">`;
+  }else{
+    c.innerHTML=`<input class="filter-select" type="date" id="${containerId}-from" onchange="${onChange}()" style="flex:1"><input class="filter-select" type="time" id="${containerId}-time" onchange="${onChange}()" style="flex:0.7">`;
+  }
+}
+function getDateFilters(containerId){
+  const from=document.getElementById(containerId+'-from');
+  const to=document.getElementById(containerId+'-to');
+  const time=document.getElementById(containerId+'-time');
+  return{from:from?from.value:'',to:to?to.value:'',time:time?time.value:''};
+}
+function applyDateFilter(list,containerId){
+  const f=getDateFilters(containerId);
+  if(f.from){
+    const[y,m,d]=f.from.split('-');
+    const fromDate=new Date(+y,+m-1,+d);
+    list=list.filter(t=>{const[dd,mm,yy]=t.fecha.split('/').map(Number);return new Date(yy,mm-1,dd)>=fromDate;});
+  }
+  if(f.to){
+    const[y,m,d]=f.to.split('-');
+    const toDate=new Date(+y,+m-1,+d,23,59,59);
+    list=list.filter(t=>{const[dd,mm,yy]=t.fecha.split('/').map(Number);return new Date(yy,mm-1,dd)<=toDate;});
+  }
+  return list;
+}
 function renderTransactions(){
-  const cats=['Todas',...new Set(allTx.map(t=>t.categoria))];
+  let cats=['Todas',...new Set(allTx.map(t=>t.categoria))];
+  const otros=cats.indexOf('Otros');
+  if(otros>1){cats.splice(otros,1);cats.push('Otros');}
   const sel=document.getElementById('cat-select');
   sel.innerHTML=cats.map(c=>`<option value="${c}"${c===activeCat?' selected':''}>${(EMOJI[c]||'•')} ${c}</option>`).join('');
-  document.getElementById('date-filter').value='';
+  buildDateFilter('date-filter-container','drawTxList');
   drawTxList();
 }
 function drawTxList(){
   const q=(document.getElementById('search').value||'').toLowerCase();
-  const dateVal=document.getElementById('date-filter').value;
   let list=filtered(allTx).filter(t=>(activeCat==='Todas'||t.categoria===activeCat)&&(!q||t.concepto.toLowerCase().includes(q)||simplifyName(t.concepto).toLowerCase().includes(q)));
-  if(dateVal){const[y,m,d]=dateVal.split('-');const ds=d+'/'+m+'/'+y;list=list.filter(t=>t.fecha===ds);}
+  list=applyDateFilter(list,'date-filter-container');
   const el=document.getElementById('tx-list');
   if(!list.length){el.innerHTML='<div class="empty"><div class="empty-icon">🔍</div>Sin resultados</div>';return;}
   el.innerHTML='<div class="card" style="padding:0 16px">'+list.slice(0,150).map((t,i)=>`<div class="tx-item" onclick="openModal(${i},${JSON.stringify(t).replace(/"/g,'&quot;')})"><div class="tx-icon" style="background:${t.importe>=0?'var(--green-dim)':'var(--card2)'}">${EMOJI[t.categoria]||'•'}</div><div class="tx-info"><div class="tx-name">${simplifyName(t.concepto)}</div><div class="tx-meta">${t.fecha} · ${t.categoria}</div></div><div class="tx-amount ${t.importe>=0?'pos':'neg'}">${fmt(t.importe)}</div></div>`).join('')+'</div>';
@@ -448,30 +465,23 @@ function openModal(idx,txStr){
 function closeModal(){document.getElementById('modal').classList.add('hidden');}
 function closeModalOutside(e){if(e.target.id==='modal')closeModal();}
 
-// Subscriptions
-function renderSubscriptions(){
-  const subs=appData.subscriptions||[];
-  const total=subs.reduce((s,x)=>s+x.importe,0);
-  document.getElementById('subs-header').innerHTML=subs.length?`<div class="subs-total">Total mensual estimado: ${fmtA(total)} €</div>`:'';
-  const el=document.getElementById('subs-list');
-  if(!subs.length){el.innerHTML='<div class="empty"><div class="empty-icon">🔄</div>No se detectaron suscripciones</div>';return;}
-  el.innerHTML=subs.map(s=>`<div class="sub-item"><div style="flex:1;min-width:0"><div class="sub-name">${EMOJI[s.categoria]||'•'} ${s.nombre}</div><div class="sub-meta">Ultimo cobro: ${s.ultimo_cobro} · ${s.meses} meses</div></div><div style="text-align:right;flex-shrink:0"><div style="color:var(--red);font-size:14px">-${s.importe.toFixed(2).replace('.',',')} €</div><div class="sub-badge ${s.sospechosa?'warn':'ok'}" style="margin-top:4px">${s.sospechosa?'⚠️ Sin actividad':'✓ Activa'}</div></div></div>`).join('');
-}
-
 // Transfers tab
 let transferFilter='all';
 function setTransferFilter(f){
   transferFilter=f;
-  document.querySelectorAll('#transfer-filter .cat-btn').forEach(b=>b.classList.remove('active'));
-  event.target.classList.add('active');
   drawTransferList();
 }
-function renderTransfers(){transferFilter='all';document.querySelectorAll('#transfer-filter .cat-btn').forEach((b,i)=>b.classList.toggle('active',i===0));drawTransferList();}
+function renderTransfers(){
+  transferFilter='all';
+  document.getElementById('transfer-type-select').value='all';
+  buildDateFilter('date-filter-tx-container','drawTransferList');
+  drawTransferList();
+}
 function drawTransferList(){
-  const q=(document.getElementById('search-tx').value||'').toLowerCase();
-  let list=filtered(allTransfers).filter(t=>!q||t.concepto.toLowerCase().includes(q)||simplifyName(t.concepto).toLowerCase().includes(q));
+  let list=filtered(allTransfers);
   if(transferFilter==='in')list=list.filter(t=>t.importe>0);
   if(transferFilter==='out')list=list.filter(t=>t.importe<0);
+  list=applyDateFilter(list,'date-filter-tx-container');
   const totalIn=list.filter(t=>t.importe>0).reduce((s,t)=>s+t.importe,0);
   const totalOut=list.filter(t=>t.importe<0).reduce((s,t)=>s+Math.abs(t.importe),0);
   document.getElementById('transfers-summary').innerHTML=list.length?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"><div class="hero-stat"><div class="hero-stat-label">Recibido</div><div class="hero-stat-value green">${fmtA(totalIn)} €</div></div><div class="hero-stat"><div class="hero-stat-label">Enviado</div><div class="hero-stat-value red">${fmtA(totalOut)} €</div></div></div>`:'';

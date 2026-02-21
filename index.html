@@ -32,14 +32,13 @@ body{display:flex;flex-direction:column}
 .header-title{font-family:'DM Serif Display',serif;font-size:20px;color:var(--green)}
 .header-meta{font-size:10px;color:var(--muted);text-align:right;line-height:1.6}
 .lock-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px}
-.month-bar{display:flex;gap:8px;padding:8px 16px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--border);flex-shrink:0;align-items:center}
-.month-bar::-webkit-scrollbar{display:none}
+.month-bar{display:flex;gap:8px;padding:8px 16px;overflow:visible;border-bottom:1px solid var(--border);flex-shrink:0;align-items:center;flex-wrap:wrap}
 .month-chip{white-space:nowrap;padding:5px 12px;border-radius:20px;font-size:11px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;font-family:'DM Mono',monospace}
 .month-chip.active{background:var(--green-dim);border-color:var(--green);color:var(--green)}
 .year-group{position:relative;flex-shrink:0}
 .year-btn{white-space:nowrap;padding:5px 12px;border-radius:20px;font-size:11px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;font-family:'DM Mono',monospace;display:flex;align-items:center;gap:4px}
 .year-btn.has-active{background:var(--green-dim);border-color:var(--green);color:var(--green)}
-.year-dropdown{display:none;position:absolute;bottom:calc(100% + 4px);left:0;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:6px;z-index:100;min-width:120px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.year-dropdown{display:none;position:absolute;top:calc(100% + 4px);left:0;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:6px;z-index:200;min-width:120px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
 .year-dropdown.open{display:flex;flex-wrap:wrap;gap:4px}
 .ym-chip{padding:5px 10px;border-radius:16px;font-size:11px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:'DM Mono',monospace;transition:all .2s;text-align:center;min-width:42px}
 .ym-chip.active{background:var(--green-dim);border-color:var(--green);color:var(--green)}

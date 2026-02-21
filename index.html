@@ -171,45 +171,32 @@ canvas{display:block;width:100%!important}
 
   <div class="content" id="tab1">
     <input class="search-box" id="search" type="search" placeholder="Buscar..." oninput="drawTxList()">
-    <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center">
-      <select id="cat-select" class="filter-select" onchange="activeCat=this.value;drawTxList()" style="flex:1;min-width:0"></select>
-      <button class="filter-select" id="gastos-date-btn" onclick="openDateModal('gastos')" style="flex:1;text-align:left;font-size:11px;padding:6px 10px;cursor:pointer">Filtrar por fecha</button>
+    <div style="display:flex;gap:6px;margin-bottom:14px;align-items:center">
+      <select id="cat-select" class="filter-select" onchange="activeCat=this.value;drawTxList()" style="flex:0 0 auto;max-width:110px;font-size:11px;padding:6px 8px"></select>
+      <input id="date-from-gastos" class="filter-select" type="date" onchange="drawTxList()" style="flex:1;font-size:11px;padding:6px 8px">
+      <span style="color:var(--muted);font-size:11px;flex-shrink:0">a</span>
+      <input id="date-to-gastos" class="filter-select" type="date" onchange="drawTxList()" style="flex:1;font-size:11px;padding:6px 8px">
     </div>
     <div id="tx-list"></div>
   </div>
 
   <div class="content" id="tab2">
     <div id="transfers-summary"></div>
-    <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center">
-      <select id="transfer-type-select" class="filter-select" onchange="setTransferFilter(this.value)" style="flex:0 0 auto;min-width:0;padding:6px 8px;font-size:11px">
+    <div style="display:flex;gap:6px;margin-bottom:14px;align-items:center">
+      <select id="transfer-type-select" class="filter-select" onchange="setTransferFilter(this.value)" style="flex:0 0 auto;max-width:100px;font-size:11px;padding:6px 8px">
         <option value="all">Todos</option>
         <option value="in">Recibido</option>
         <option value="out">Enviado</option>
       </select>
-      <button class="filter-select" id="tx-date-btn" onclick="openDateModal('tx')" style="flex:1;text-align:left;font-size:11px;padding:6px 10px;cursor:pointer">Filtrar por fecha</button>
+      <input id="date-from-tx" class="filter-select" type="date" onchange="drawTransferList()" style="flex:1;font-size:11px;padding:6px 8px">
+      <span style="color:var(--muted);font-size:11px;flex-shrink:0">a</span>
+      <input id="date-to-tx" class="filter-select" type="date" onchange="drawTransferList()" style="flex:1;font-size:11px;padding:6px 8px">
     </div>
     <div id="transfers-list"></div>
   </div>
 
   <div class="content" id="tab3">
     <div id="alerts-list"></div>
-  </div>
-</div>
-
-<div class="modal-overlay hidden" id="date-modal" onclick="if(event.target.id==='date-modal')closeDateModal()">
-  <div class="modal-card" style="padding:20px">
-    <div class="modal-handle"></div>
-    <div style="font-size:14px;font-weight:500;margin-bottom:16px;color:var(--text)">Filtrar por fecha</div>
-    <div style="display:flex;flex-direction:column;gap:12px">
-      <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Desde</label><input class="filter-select" type="date" id="dm-from" style="width:100%"></div>
-      <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Hasta</label><input class="filter-select" type="date" id="dm-to" style="width:100%"></div>
-      <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Hora desde</label><input class="filter-select" type="time" id="dm-time-from" style="width:100%"></div>
-      <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Hora hasta</label><input class="filter-select" type="time" id="dm-time-to" style="width:100%"></div>
-    </div>
-    <div style="display:flex;gap:8px;margin-top:16px">
-      <button class="modal-close-btn" style="flex:1;background:var(--card2)" onclick="clearDateFilter()">Limpiar</button>
-      <button class="modal-close-btn" style="flex:1;background:var(--green);color:var(--bg)" onclick="applyDateModal()">Aplicar</button>
-    </div>
   </div>
 </div>
 
@@ -318,7 +305,7 @@ function buildMonthBar(){
     const label=activeLabel?MN[activeLabel.mo]+' '+y:y;
     html+=`<div class="year-group"><button class="year-btn${hasActive?' has-active':''}" onclick="toggleYear(this,'yd-${y}')">${label} ▾</button>`;
     html+=`<div class="year-dropdown" id="yd-${y}">`;
-    years[y].forEach(m=>{html+=`<button class="ym-chip${m.k===currentMonth?' active':''}" onclick="setMonth('${m.k}')">${MN[m.mo]}</button>`;});
+    years[y].sort((a,b)=>a.mo-b.mo).forEach(m=>{html+=`<button class="ym-chip${m.k===currentMonth?' active':''}" onclick="setMonth('${m.k}')">${MN[m.mo]}</button>`;});
     html+=`</div></div>`;
   });
   document.getElementById('month-bar').innerHTML=html;
@@ -419,50 +406,11 @@ function buildCats(){
 }
 
 // Transactions tab
-let dateFilters={gastos:{},tx:{}};
-let dateModalTarget='gastos';
-function openDateModal(target){
-  dateModalTarget=target;
-  const f=dateFilters[target]||{};
-  document.getElementById('dm-from').value=f.from||'';
-  document.getElementById('dm-to').value=f.to||'';
-  document.getElementById('dm-time-from').value=f.timeFrom||'';
-  document.getElementById('dm-time-to').value=f.timeTo||'';
-  document.getElementById('date-modal').classList.remove('hidden');
-}
-function closeDateModal(){document.getElementById('date-modal').classList.add('hidden');}
-function applyDateModal(){
-  const f={from:document.getElementById('dm-from').value,to:document.getElementById('dm-to').value,timeFrom:document.getElementById('dm-time-from').value,timeTo:document.getElementById('dm-time-to').value};
-  dateFilters[dateModalTarget]=f;
-  const hasFilter=f.from||f.to||f.timeFrom||f.timeTo;
-  const btnId=dateModalTarget==='gastos'?'gastos-date-btn':'tx-date-btn';
-  const btn=document.getElementById(btnId);
-  if(hasFilter){
-    let label=[];
-    if(f.from){const[y,m,d]=f.from.split('-');label.push(d+'/'+m);}
-    if(f.to){const[y,m,d]=f.to.split('-');label.push(d+'/'+m);}
-    btn.textContent=label.join(' - ')||(f.timeFrom||'')+' - '+(f.timeTo||'');
-    btn.style.borderColor='var(--green)';btn.style.color='var(--green)';
-  }else{
-    btn.textContent='Filtrar por fecha';
-    btn.style.borderColor='';btn.style.color='';
-  }
-  closeDateModal();
-  if(dateModalTarget==='gastos')drawTxList();else drawTransferList();
-}
-function clearDateFilter(){
-  dateFilters[dateModalTarget]={};
-  const btnId=dateModalTarget==='gastos'?'gastos-date-btn':'tx-date-btn';
-  document.getElementById(btnId).textContent='Filtrar por fecha';
-  document.getElementById(btnId).style.borderColor='';
-  document.getElementById(btnId).style.color='';
-  closeDateModal();
-  if(dateModalTarget==='gastos')drawTxList();else drawTransferList();
-}
-function applyDateFilterToList(list,target){
-  const f=dateFilters[target]||{};
-  if(f.from){const[y,m,d]=f.from.split('-');const fd=new Date(+y,+m-1,+d);list=list.filter(t=>{const[dd,mm,yy]=t.fecha.split('/').map(Number);return new Date(yy,mm-1,dd)>=fd;});}
-  if(f.to){const[y,m,d]=f.to.split('-');const td=new Date(+y,+m-1,+d,23,59,59);list=list.filter(t=>{const[dd,mm,yy]=t.fecha.split('/').map(Number);return new Date(yy,mm-1,dd)<=td;});}
+function dateFilter(list,fromId,toId){
+  const fv=document.getElementById(fromId).value;
+  const tv=document.getElementById(toId).value;
+  if(fv){const[y,m,d]=fv.split('-');const fd=new Date(+y,+m-1,+d);list=list.filter(t=>{const[dd,mm,yy]=t.fecha.split('/').map(Number);return new Date(yy,mm-1,dd)>=fd;});}
+  if(tv){const[y,m,d]=tv.split('-');const td=new Date(+y,+m-1,+d,23,59,59);list=list.filter(t=>{const[dd,mm,yy]=t.fecha.split('/').map(Number);return new Date(yy,mm-1,dd)<=td;});}
   return list;
 }
 function renderTransactions(){
@@ -471,13 +419,14 @@ function renderTransactions(){
   if(otros>1){cats.splice(otros,1);cats.push('Otros');}
   const sel=document.getElementById('cat-select');
   sel.innerHTML=cats.map(c=>`<option value="${c}"${c===activeCat?' selected':''}>${(EMOJI[c]||'•')} ${c}</option>`).join('');
-  dateFilters.gastos={};document.getElementById('gastos-date-btn').textContent='Filtrar por fecha';document.getElementById('gastos-date-btn').style.borderColor='';document.getElementById('gastos-date-btn').style.color='';
+  document.getElementById('date-from-gastos').value='';
+  document.getElementById('date-to-gastos').value='';
   drawTxList();
 }
 function drawTxList(){
   const q=(document.getElementById('search').value||'').toLowerCase();
   let list=filtered(allTx).filter(t=>(activeCat==='Todas'||t.categoria===activeCat)&&(!q||t.concepto.toLowerCase().includes(q)||simplifyName(t.concepto).toLowerCase().includes(q)));
-  list=applyDateFilterToList(list,'gastos');
+  list=dateFilter(list,'date-from-gastos','date-to-gastos');
   const el=document.getElementById('tx-list');
   if(!list.length){el.innerHTML='<div class="empty"><div class="empty-icon">🔍</div>Sin resultados</div>';return;}
   el.innerHTML='<div class="card" style="padding:0 16px">'+list.slice(0,150).map((t,i)=>`<div class="tx-item" onclick="openModal(${i},${JSON.stringify(t).replace(/"/g,'&quot;')})"><div class="tx-icon" style="background:${t.importe>=0?'var(--green-dim)':'var(--card2)'}">${EMOJI[t.categoria]||'•'}</div><div class="tx-info"><div class="tx-name">${simplifyName(t.concepto)}</div><div class="tx-meta">${t.fecha} · ${t.categoria}</div></div><div class="tx-amount ${t.importe>=0?'pos':'neg'}">${fmt(t.importe)}</div></div>`).join('')+'</div>';
@@ -508,14 +457,15 @@ function setTransferFilter(f){
 function renderTransfers(){
   transferFilter='all';
   document.getElementById('transfer-type-select').value='all';
-  dateFilters.tx={};document.getElementById('tx-date-btn').textContent='Filtrar por fecha';document.getElementById('tx-date-btn').style.borderColor='';document.getElementById('tx-date-btn').style.color='';
+  document.getElementById('date-from-tx').value='';
+  document.getElementById('date-to-tx').value='';
   drawTransferList();
 }
 function drawTransferList(){
   let list=filtered(allTransfers);
   if(transferFilter==='in')list=list.filter(t=>t.importe>0);
   if(transferFilter==='out')list=list.filter(t=>t.importe<0);
-  list=applyDateFilterToList(list,'tx');
+  list=dateFilter(list,'date-from-tx','date-to-tx');
   const totalIn=list.filter(t=>t.importe>0).reduce((s,t)=>s+t.importe,0);
   const totalOut=list.filter(t=>t.importe<0).reduce((s,t)=>s+Math.abs(t.importe),0);
   document.getElementById('transfers-summary').innerHTML=list.length?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"><div class="hero-stat"><div class="hero-stat-label">Recibido</div><div class="hero-stat-value green">${fmtA(totalIn)} €</div></div><div class="hero-stat"><div class="hero-stat-label">Enviado</div><div class="hero-stat-value red">${fmtA(totalOut)} €</div></div></div>`:'';

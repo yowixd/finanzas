@@ -88,8 +88,6 @@ canvas{display:block;width:100%!important}
 .alert-title{font-size:13px;font-weight:500;margin-bottom:4px}
 .alert-desc{font-size:12px;color:var(--muted);line-height:1.5}
 .filter-select{padding:8px 12px;border-radius:10px;font-size:12px;border:1px solid var(--border);background:var(--card);color:var(--text);font-family:'DM Mono',monospace;appearance:auto;flex:1;min-width:0}
-.date-panel{display:flex;gap:6px;margin-bottom:14px;align-items:center}
-.date-panel.hidden{display:none}
 .empty{text-align:center;padding:50px 20px;color:var(--muted)}
 .empty-icon{font-size:36px;margin-bottom:10px}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)}
@@ -173,34 +171,26 @@ canvas{display:block;width:100%!important}
 
   <div class="content" id="tab1">
     <input class="search-box" id="search" type="search" placeholder="Buscar..." oninput="drawTxList()">
-    <div style="display:flex;gap:8px;margin-bottom:10px">
-      <select id="cat-select" class="filter-select" onchange="activeCat=this.value;drawTxList()" style="flex:1"></select>
-      <button class="filter-select" id="gastos-date-btn" onclick="toggleDatePanel('gastos')" style="flex:1;cursor:pointer;text-align:left">Filtrar por fecha</button>
-    </div>
-    <div id="date-panel-gastos" class="date-panel hidden">
-      <input id="date-from-gastos" class="filter-select" type="date" onchange="drawTxList()" style="flex:1">
+    <div style="display:flex;gap:6px;margin-bottom:14px;align-items:center">
+      <select id="cat-select" class="filter-select" onchange="activeCat=this.value;drawTxList()"></select>
+      <input id="date-from-gastos" class="filter-select" type="date" onchange="drawTxList()">
       <span style="color:var(--muted);font-size:11px;flex-shrink:0">a</span>
-      <input id="date-to-gastos" class="filter-select" type="date" onchange="drawTxList()" style="flex:1">
-      <button class="filter-select" onclick="clearDates('gastos')" style="flex:0 0 auto;cursor:pointer;color:var(--muted);padding:6px 10px">✕</button>
+      <input id="date-to-gastos" class="filter-select" type="date" onchange="drawTxList()">
     </div>
     <div id="tx-list"></div>
   </div>
 
   <div class="content" id="tab2">
     <div id="transfers-summary"></div>
-    <div style="display:flex;gap:8px;margin-bottom:10px">
-      <select id="transfer-type-select" class="filter-select" onchange="setTransferFilter(this.value)" style="flex:1">
+    <div style="display:flex;gap:6px;margin-bottom:14px;align-items:center">
+      <select id="transfer-type-select" class="filter-select" onchange="setTransferFilter(this.value)">
         <option value="all">Todos</option>
         <option value="in">Recibido</option>
         <option value="out">Enviado</option>
       </select>
-      <button class="filter-select" id="tx-date-btn" onclick="toggleDatePanel('tx')" style="flex:1;cursor:pointer;text-align:left">Filtrar por fecha</button>
-    </div>
-    <div id="date-panel-tx" class="date-panel hidden">
-      <input id="date-from-tx" class="filter-select" type="date" onchange="drawTransferList()" style="flex:1">
+      <input id="date-from-tx" class="filter-select" type="date" onchange="drawTransferList()">
       <span style="color:var(--muted);font-size:11px;flex-shrink:0">a</span>
-      <input id="date-to-tx" class="filter-select" type="date" onchange="drawTransferList()" style="flex:1">
-      <button class="filter-select" onclick="clearDates('tx')" style="flex:0 0 auto;cursor:pointer;color:var(--muted);padding:6px 10px">✕</button>
+      <input id="date-to-tx" class="filter-select" type="date" onchange="drawTransferList()">
     </div>
     <div id="transfers-list"></div>
   </div>
@@ -416,25 +406,6 @@ function buildCats(){
 }
 
 // Transactions tab
-function toggleDatePanel(target){
-  const panel=document.getElementById('date-panel-'+target);
-  const btn=document.getElementById(target+'-date-btn');
-  panel.classList.toggle('hidden');
-  if(!panel.classList.contains('hidden')){btn.style.borderColor='var(--green)';btn.style.color='var(--green)';}
-  else{
-    const f=document.getElementById('date-from-'+target).value;
-    const t=document.getElementById('date-to-'+target).value;
-    if(!f&&!t){btn.style.borderColor='';btn.style.color='';btn.textContent='Filtrar por fecha';}
-  }
-}
-function clearDates(target){
-  document.getElementById('date-from-'+target).value='';
-  document.getElementById('date-to-'+target).value='';
-  document.getElementById('date-panel-'+target).classList.add('hidden');
-  const btn=document.getElementById(target+'-date-btn');
-  btn.style.borderColor='';btn.style.color='';btn.textContent='Filtrar por fecha';
-  if(target==='gastos')drawTxList();else drawTransferList();
-}
 function dateFilter(list,fromId,toId){
   const fv=document.getElementById(fromId).value;
   const tv=document.getElementById(toId).value;

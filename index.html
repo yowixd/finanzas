@@ -423,8 +423,14 @@ function toISO(dmy){if(!dmy)return '';const[d,m,y]=dmy.split('/');return y+'-'+m
 function openDateModal(target){
   dateTarget=target;
   const meta=appData.meta||{};
-  const minD=toISO(meta.fecha_desde);
-  const maxD=toISO(meta.fecha_hasta);
+  let minD=toISO(meta.fecha_desde);
+  let maxD=toISO(meta.fecha_hasta);
+  if(currentMonth!=='all'){
+    const[y,mo]=currentMonth.split('-');
+    const lastDay=new Date(+y,+mo,0).getDate();
+    minD=y+'-'+mo+'-01';
+    maxD=y+'-'+mo+'-'+String(lastDay).padStart(2,'0');
+  }
   const from=document.getElementById('dm-from');
   const to=document.getElementById('dm-to');
   from.min=minD;from.max=maxD;

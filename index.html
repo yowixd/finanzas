@@ -458,15 +458,20 @@ let deferredPrompt=null;
 window.addEventListener('beforeinstallprompt',e=>{
   e.preventDefault();
   deferredPrompt=e;
-  document.getElementById('install-btn').style.display='block';
+  const b=document.getElementById('install-btn');
+  b.textContent='Instalar App';
+  b.style.display='block';
 });
 function installApp(){
-  if(!deferredPrompt)return;
-  deferredPrompt.prompt();
-  deferredPrompt.userChoice.then(r=>{
-    if(r.outcome==='accepted')document.getElementById('install-btn').style.display='none';
-    deferredPrompt=null;
-  });
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(r=>{
+      if(r.outcome==='accepted')document.getElementById('install-btn').style.display='none';
+      deferredPrompt=null;
+    });
+  }else{
+    alert('Toca los 3 puntos del menu de Chrome (arriba derecha) y selecciona "Anadir a pantalla de inicio". Luego abre desde el icono nuevo.');
+  }
 }
 window.addEventListener('appinstalled',()=>{
   document.getElementById('install-btn').style.display='none';
@@ -474,7 +479,18 @@ window.addEventListener('appinstalled',()=>{
 
 (function(){
   if(isLocked()){const d=getLock();lockTimer(d.until);}
-  if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('sw.js').then(()=>{
+      // Show install button after SW registers if prompt hasn't fired
+      setTimeout(()=>{
+        const b=document.getElementById('install-btn');
+        if(b.style.display==='none'){
+          b.textContent='Instalar App';
+          b.style.display='block';
+        }
+      },2000);
+    }).catch(()=>{});
+  }
 })();
 </script>
 </body>

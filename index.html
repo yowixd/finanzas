@@ -32,10 +32,17 @@ body{display:flex;flex-direction:column}
 .header-title{font-family:'DM Serif Display',serif;font-size:20px;color:var(--green)}
 .header-meta{font-size:10px;color:var(--muted);text-align:right;line-height:1.6}
 .lock-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px}
-.month-bar{display:flex;gap:8px;padding:8px 16px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--border);flex-shrink:0}
+.month-bar{display:flex;gap:8px;padding:8px 16px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--border);flex-shrink:0;align-items:center}
 .month-bar::-webkit-scrollbar{display:none}
 .month-chip{white-space:nowrap;padding:5px 12px;border-radius:20px;font-size:11px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;font-family:'DM Mono',monospace}
 .month-chip.active{background:var(--green-dim);border-color:var(--green);color:var(--green)}
+.year-group{position:relative;flex-shrink:0}
+.year-btn{white-space:nowrap;padding:5px 12px;border-radius:20px;font-size:11px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;font-family:'DM Mono',monospace;display:flex;align-items:center;gap:4px}
+.year-btn.has-active{background:var(--green-dim);border-color:var(--green);color:var(--green)}
+.year-dropdown{display:none;position:absolute;top:calc(100% + 4px);left:0;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:6px;z-index:100;min-width:120px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.year-dropdown.open{display:flex;flex-wrap:wrap;gap:4px}
+.ym-chip{padding:5px 10px;border-radius:16px;font-size:11px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:'DM Mono',monospace;transition:all .2s;text-align:center;min-width:42px}
+.ym-chip.active{background:var(--green-dim);border-color:var(--green);color:var(--green)}
 .tabs{display:flex;border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none;flex-shrink:0}
 .tabs::-webkit-scrollbar{display:none}
 .tab{flex:1;min-width:80px;padding:11px 8px;text-align:center;font-size:11px;border:none;background:none;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;font-family:'DM Mono',monospace}
@@ -89,10 +96,7 @@ canvas{display:block;width:100%!important}
 .alert-icon{font-size:18px;flex-shrink:0;margin-top:1px}
 .alert-title{font-size:13px;font-weight:500;margin-bottom:4px}
 .alert-desc{font-size:12px;color:var(--muted);line-height:1.5}
-.filter-tabs{display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
-.filter-tabs::-webkit-scrollbar{display:none}
-.filter-tab{white-space:nowrap;padding:5px 12px;border-radius:20px;font-size:11px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;font-family:'DM Mono',monospace}
-.filter-tab.active{background:var(--green-dim);border-color:var(--green);color:var(--green)}
+.filter-select{padding:8px 12px;border-radius:10px;font-size:12px;border:1px solid var(--border);background:var(--card);color:var(--text);font-family:'DM Mono',monospace;appearance:auto;flex:1;min-width:0}
 .empty{text-align:center;padding:50px 20px;color:var(--muted)}
 .empty-icon{font-size:36px;margin-bottom:10px}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)}
@@ -177,7 +181,10 @@ canvas{display:block;width:100%!important}
 
   <div class="content" id="tab1">
     <input class="search-box" id="search" type="search" placeholder="Buscar..." oninput="drawTxList()">
-    <div class="filter-tabs" id="cat-filters"></div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <select id="cat-select" class="filter-select" onchange="activeCat=this.value;drawTxList()"></select>
+      <input id="date-filter" class="filter-select" type="date" onchange="drawTxList()" style="flex:1">
+    </div>
     <div id="tx-list"></div>
   </div>
 
@@ -188,6 +195,11 @@ canvas{display:block;width:100%!important}
 
   <div class="content" id="tab3">
     <input class="search-box" id="search-tx" type="search" placeholder="Buscar..." oninput="drawTransferList()">
+    <div class="cat-filter" id="transfer-filter">
+      <button class="cat-btn active" onclick="setTransferFilter('all')">Todos</button>
+      <button class="cat-btn" onclick="setTransferFilter('in')">Recibido</button>
+      <button class="cat-btn" onclick="setTransferFilter('out')">Enviado</button>
+    </div>
     <div id="transfers-summary"></div>
     <div id="transfers-list"></div>
   </div>
@@ -290,17 +302,33 @@ function lockApp(){
 }
 
 // Month filter
+const MN=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 function buildMonthBar(){
   const months=appData.monthly||[];
-  const chips=[{k:'all',l:'Todos'},...[...months].reverse().map(m=>{const[y,mo]=m.mes.split('-');const names=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];return{k:m.mes,l:names[+mo]+' '+y};})]  ;
-  document.getElementById('month-bar').innerHTML=chips.map(c=>`<button class="month-chip${c.k===currentMonth?' active':''}" onclick="setMonth('${c.k}')">${c.l}</button>`).join('');
+  const years={};
+  [...months].reverse().forEach(m=>{const[y,mo]=m.mes.split('-');if(!years[y])years[y]=[];years[y].push({k:m.mes,mo:+mo});});
+  let html=`<button class="month-chip${currentMonth==='all'?' active':''}" onclick="setMonth('all')">Todos</button>`;
+  Object.keys(years).sort((a,b)=>b-a).forEach(y=>{
+    const hasActive=years[y].some(m=>m.k===currentMonth);
+    const activeLabel=hasActive?years[y].find(m=>m.k===currentMonth):null;
+    const label=activeLabel?MN[activeLabel.mo]+' '+y:y;
+    html+=`<div class="year-group"><button class="year-btn${hasActive?' has-active':''}" onclick="toggleYear(this,'yd-${y}')">${label} ▾</button>`;
+    html+=`<div class="year-dropdown" id="yd-${y}">`;
+    years[y].forEach(m=>{html+=`<button class="ym-chip${m.k===currentMonth?' active':''}" onclick="setMonth('${m.k}')">${MN[m.mo]}</button>`;});
+    html+=`</div></div>`;
+  });
+  document.getElementById('month-bar').innerHTML=html;
+}
+function toggleYear(btn,id){
+  const dd=document.getElementById(id);
+  const wasOpen=dd.classList.contains('open');
+  document.querySelectorAll('.year-dropdown').forEach(d=>d.classList.remove('open'));
+  if(!wasOpen)dd.classList.add('open');
 }
 function setMonth(m){
   currentMonth=m;
-  document.querySelectorAll('.month-chip').forEach((c,i)=>{
-    const chips=[{k:'all',l:'Todos'},...[...(appData.monthly||[])].reverse().map(x=>{const[y,mo]=x.mes.split('-');const ns=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];return{k:x.mes,l:ns[+mo]+' '+y};})];
-    c.classList.toggle('active',chips[i]&&chips[i].k===m);
-  });
+  document.querySelectorAll('.year-dropdown').forEach(d=>d.classList.remove('open'));
+  buildMonthBar();
   renderAll();
 }
 function filtered(list){
@@ -389,13 +417,16 @@ function buildCats(){
 // Transactions tab
 function renderTransactions(){
   const cats=['Todas',...new Set(allTx.map(t=>t.categoria))];
-  document.getElementById('cat-filters').innerHTML=cats.map(c=>`<button class="filter-tab${c===activeCat?' active':''}" onclick="setCat('${c}')">${EMOJI[c]||'•'} ${c}</button>`).join('');
+  const sel=document.getElementById('cat-select');
+  sel.innerHTML=cats.map(c=>`<option value="${c}"${c===activeCat?' selected':''}>${(EMOJI[c]||'•')} ${c}</option>`).join('');
+  document.getElementById('date-filter').value='';
   drawTxList();
 }
-function setCat(c){activeCat=c;document.querySelectorAll('.filter-tab').forEach((b,i)=>b.classList.toggle('active',b.textContent.trim().startsWith((EMOJI[c]||'•')+' '+c)||b.textContent.trim()===c));drawTxList();}
 function drawTxList(){
   const q=(document.getElementById('search').value||'').toLowerCase();
-  const list=filtered(allTx).filter(t=>(activeCat==='Todas'||t.categoria===activeCat)&&(!q||t.concepto.toLowerCase().includes(q)||simplifyName(t.concepto).toLowerCase().includes(q)));
+  const dateVal=document.getElementById('date-filter').value;
+  let list=filtered(allTx).filter(t=>(activeCat==='Todas'||t.categoria===activeCat)&&(!q||t.concepto.toLowerCase().includes(q)||simplifyName(t.concepto).toLowerCase().includes(q)));
+  if(dateVal){const[y,m,d]=dateVal.split('-');const ds=d+'/'+m+'/'+y;list=list.filter(t=>t.fecha===ds);}
   const el=document.getElementById('tx-list');
   if(!list.length){el.innerHTML='<div class="empty"><div class="empty-icon">🔍</div>Sin resultados</div>';return;}
   el.innerHTML='<div class="card" style="padding:0 16px">'+list.slice(0,150).map((t,i)=>`<div class="tx-item" onclick="openModal(${i},${JSON.stringify(t).replace(/"/g,'&quot;')})"><div class="tx-icon" style="background:${t.importe>=0?'var(--green-dim)':'var(--card2)'}">${EMOJI[t.categoria]||'•'}</div><div class="tx-info"><div class="tx-name">${simplifyName(t.concepto)}</div><div class="tx-meta">${t.fecha} · ${t.categoria}</div></div><div class="tx-amount ${t.importe>=0?'pos':'neg'}">${fmt(t.importe)}</div></div>`).join('')+'</div>';
@@ -428,10 +459,19 @@ function renderSubscriptions(){
 }
 
 // Transfers tab
-function renderTransfers(){drawTransferList();}
+let transferFilter='all';
+function setTransferFilter(f){
+  transferFilter=f;
+  document.querySelectorAll('#transfer-filter .cat-btn').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+  drawTransferList();
+}
+function renderTransfers(){transferFilter='all';document.querySelectorAll('#transfer-filter .cat-btn').forEach((b,i)=>b.classList.toggle('active',i===0));drawTransferList();}
 function drawTransferList(){
   const q=(document.getElementById('search-tx').value||'').toLowerCase();
-  const list=filtered(allTransfers).filter(t=>!q||t.concepto.toLowerCase().includes(q)||simplifyName(t.concepto).toLowerCase().includes(q));
+  let list=filtered(allTransfers).filter(t=>!q||t.concepto.toLowerCase().includes(q)||simplifyName(t.concepto).toLowerCase().includes(q));
+  if(transferFilter==='in')list=list.filter(t=>t.importe>0);
+  if(transferFilter==='out')list=list.filter(t=>t.importe<0);
   const totalIn=list.filter(t=>t.importe>0).reduce((s,t)=>s+t.importe,0);
   const totalOut=list.filter(t=>t.importe<0).reduce((s,t)=>s+Math.abs(t.importe),0);
   document.getElementById('transfers-summary').innerHTML=list.length?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"><div class="hero-stat"><div class="hero-stat-label">Recibido</div><div class="hero-stat-value green">${fmtA(totalIn)} €</div></div><div class="hero-stat"><div class="hero-stat-label">Enviado</div><div class="hero-stat-value red">${fmtA(totalOut)} €</div></div></div>`:'';
@@ -447,6 +487,8 @@ function renderAlerts(){
   if(!alerts.length){el.innerHTML='<div class="empty"><div class="empty-icon">✅</div>Sin alertas. Todo en orden.</div>';return;}
   el.innerHTML=alerts.map(a=>`<div class="alert-card ${a.tipo}"><div class="alert-icon">${a.tipo==='warning'?'⚠️':'ℹ️'}</div><div><div class="alert-title">${a.titulo}</div><div class="alert-desc">${a.descripcion}</div></div></div>`).join('');
 }
+
+document.addEventListener('click',e=>{if(!e.target.closest('.year-group'))document.querySelectorAll('.year-dropdown').forEach(d=>d.classList.remove('open'));});
 
 // Tabs
 function showTab(idx){

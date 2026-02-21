@@ -127,6 +127,7 @@ canvas{display:block;width:100%!important}
   </div>
   <div class="login-error" id="login-error"></div>
   <div class="login-lockout hidden" id="lockout-msg"></div>
+  <button id="install-btn" style="display:none;margin:24px auto 0;padding:12px 32px;background:transparent;border:1px solid var(--green);color:var(--green);border-radius:12px;font-size:14px;cursor:pointer;font-family:var(--font-mono)" onclick="installApp()">Instalar App</button>
 </div>
 
 <div id="app">
@@ -452,6 +453,24 @@ function showTab(idx){
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
   document.querySelectorAll('.content').forEach((c,i)=>c.classList.toggle('active',i===idx));
 }
+
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();
+  deferredPrompt=e;
+  document.getElementById('install-btn').style.display='block';
+});
+function installApp(){
+  if(!deferredPrompt)return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(r=>{
+    if(r.outcome==='accepted')document.getElementById('install-btn').style.display='none';
+    deferredPrompt=null;
+  });
+}
+window.addEventListener('appinstalled',()=>{
+  document.getElementById('install-btn').style.display='none';
+});
 
 (function(){
   if(isLocked()){const d=getLock();lockTimer(d.until);}
